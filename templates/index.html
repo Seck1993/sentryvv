@@ -25,18 +25,19 @@
         
         /* Cards e Ações */
         .card { background: white; padding: 15px; border-radius: 10px; margin-bottom: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); display: flex; align-items: center; }
-        .info { flex-grow: 1; }
+        .info { flex-grow: 1; overflow: hidden; }
         .nome { font-weight: bold; color: #1a3a5f; text-transform: uppercase; font-size: 14px; margin-bottom: 2px; }
         .tag-veiculo { background: #ffc107; color: #000; padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: bold; margin-right: 5px; }
         .tag-embolamento { background: #1a3a5f; color: white; padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: bold; display: inline-block; margin-top: 4px; }
-        .modus { font-size: 11px; color: #d9534f; font-weight: bold; margin-top: 4px; text-transform: uppercase; }
+        .modus { font-size: 11px; color: #d9534f; font-weight: bold; margin-top: 4px; text-transform: uppercase; white-space: nowrap; text-overflow: ellipsis; overflow: hidden; }
         
-        .acoes-card { display: flex; gap: 5px; }
-        .btn-view-card { background: #1a3a5f; color: white; padding: 8px 12px; text-decoration: none; border-radius: 5px; font-size: 11px; font-weight: bold; }
-        .btn-edit-card { background: #f0f2f5; color: #1a3a5f; padding: 8px 12px; text-decoration: none; border-radius: 5px; font-size: 11px; font-weight: bold; border: 1px solid #ccc; }
+        .acoes-card { display: flex; gap: 5px; flex-direction: column; }
+        .btn-view-card { background: #1a3a5f; color: white; padding: 8px 12px; text-decoration: none; border-radius: 5px; font-size: 11px; font-weight: bold; text-align: center; }
+        .btn-edit-card { background: #f0f2f5; color: #1a3a5f; padding: 8px 12px; text-decoration: none; border-radius: 5px; font-size: 11px; font-weight: bold; border: 1px solid #ccc; text-align: center; }
+        .btn-share-quick { background: #25d366; color: white; border: none; padding: 8px 12px; border-radius: 5px; font-size: 11px; font-weight: bold; cursor: pointer; }
         
         .hidden { display: none !important; }
-        .foto-mini { width: 60px; height: 60px; border-radius: 50%; margin-right: 12px; object-fit: cover; border: 2px solid #1a3a5f; }
+        .foto-mini { width: 60px; height: 60px; border-radius: 50%; margin-right: 12px; object-fit: cover; border: 2px solid #1a3a5f; flex-shrink: 0; }
         #offline-indicator { display: none; background: #d9534f; color: white; text-align: center; padding: 5px; font-size: 12px; border-radius: 5px; margin-bottom: 10px; font-weight: bold; }
     </style>
 </head>
@@ -90,6 +91,9 @@
             <div class="acoes-card">
                 <a href="/visualizar_pessoa/{{ p.id }}" class="btn-view-card">FICHA</a>
                 <a href="/editar_pessoa/{{ p.id }}" class="btn-edit-card">EDITAR</a>
+                <button class="btn-share-quick" onclick="compartilharRapido('{{ p.id }}', '{{ p.nome_completo|e }}', '{{ p.apelido|e }}', '{{ p.documento|e }}', '{{ p.embolamento|e }}')">
+                    WHATSAPP
+                </button>
             </div>
         </div>
         {% endfor %}
@@ -137,6 +141,20 @@
         }
 
         document.getElementById('inputBusca').addEventListener('keyup', filtrarResultados);
+
+        // Função para Compartilhamento Rápido via Rota Mascarada
+        function compartilharRapido(id, nome, vulgo, doc, faccao) {
+            const linkSeguro = window.location.origin + "/i/" + id;
+            
+            let msg = `${linkSeguro}\n\n`;
+            msg += `*🚨 SENTRY VV - ALVO IDENTIFICADO 🚨*\n\n`;
+            msg += `*NOME:* ${nome.toUpperCase()}\n`;
+            msg += `*VULGO:* ${vulgo ? vulgo.toUpperCase() : 'N/I'}\n`;
+            msg += `*FACÇÃO:* ${faccao ? faccao.toUpperCase() : 'N/I'}\n`;
+            msg += `*DOCS:* ${doc || 'N/I'}`;
+
+            window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank');
+        }
     </script>
 </body>
 </html>

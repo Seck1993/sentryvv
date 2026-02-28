@@ -14,11 +14,11 @@
         label { display: block; margin-top: 15px; font-weight: bold; color: #1a3a5f; font-size: 14px; }
         input, select, textarea { width: 100%; padding: 15px; margin: 5px 0 10px 0; border: 1px solid #ccc; border-radius: 8px; box-sizing: border-box; font-size: 16px; font-family: sans-serif; }
         
-        /* Gestão de Foto Widescreen 16:9 */
+        /* Gestão de Foto - Dimensões Livres */
         .foto-container { text-align: center; margin-bottom: 20px; background: #222; padding: 20px; border-radius: 8px; }
         .foto-label { display: inline-block; width: 100%; padding: 15px; background-color: #1a3a5f; color: white; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 14px; box-sizing: border-box; margin-top: 10px; }
         
-        #preview-foto { width: 100%; max-width: 400px; height: auto; aspect-ratio: 16 / 9; object-fit: cover; border-radius: 8px; margin: 0 auto; display: block; border: 3px solid #fff; box-shadow: 0 4px 10px rgba(0,0,0,0.5); }
+        #preview-foto { width: 100%; max-width: 400px; height: auto; border-radius: 8px; margin: 0 auto; display: block; border: 3px solid #fff; box-shadow: 0 4px 10px rgba(0,0,0,0.5); }
         
         #wrapper-cropper { width: 100%; max-height: 400px; margin-top: 15px; display: none; overflow: hidden; background: #eee; border-radius: 8px; }
         #image-to-crop { max-width: 100%; display: block; }
@@ -140,18 +140,26 @@
             previewFoto.style.display = 'none';
             document.getElementById('label-foto').style.display = 'none';
             if (cropper) cropper.destroy();
-            cropper = new Cropper(imagemParaCorte, { aspectRatio: 1.777, viewMode: 1 });
+            // CORREÇÃO: aspectRatio: NaN permite redimensionar o corte livremente
+            cropper = new Cropper(imagemParaCorte, { 
+                aspectRatio: NaN, 
+                viewMode: 1,
+                autoCropArea: 1
+            });
         }
 
         function confirmarCorte() {
-            const canvas = cropper.getCroppedCanvas({ width: 800, height: 450 });
-            const b64 = canvas.toDataURL('image/jpeg', 0.85);
-            document.getElementById('foto_editada').value = b64;
-            previewFoto.src = b64;
-            previewFoto.style.display = 'block';
-            wrapper.style.display = 'none';
-            controles.style.display = 'none';
-            document.getElementById('label-foto').style.display = 'inline-block';
+            if (cropper) {
+                // CORREÇÃO: Removido tamanho fixo para manter a proporção livre selecionada
+                const canvas = cropper.getCroppedCanvas();
+                const b64 = canvas.toDataURL('image/jpeg', 0.85);
+                document.getElementById('foto_editada').value = b64;
+                previewFoto.src = b64;
+                previewFoto.style.display = 'block';
+                wrapper.style.display = 'none';
+                controles.style.display = 'none';
+                document.getElementById('label-foto').style.display = 'inline-block';
+            }
         }
 
         function vincularPessoa(input) {

@@ -59,6 +59,18 @@
             <label>Apelido / Vulgo</label>
             <input type="text" name="apelido">
 
+            <label>RG (Identidade)</label>
+            <input type="text" name="documento_rg">
+
+            <label>CPF</label>
+            <input type="text" name="documento_cpf">
+
+            <label>Data de Nascimento</label>
+            <input type="date" name="nascimento">
+
+            <label>Endereço / Referência</label>
+            <input type="text" name="endereco">
+
             <label>Embolamento (Grupo / Facção)</label>
             <input type="text" name="embolamento">
 
@@ -118,7 +130,6 @@
             }
         }
 
-        // Mapa
         var mapa = L.map('mapa_selecao', { zoomControl: false }).setView([-29.7562, -52.1458], 15);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(mapa);
         var marc = L.marker([-29.7562, -52.1458], {draggable: true}).addTo(mapa);

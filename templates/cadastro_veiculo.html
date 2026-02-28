@@ -8,7 +8,6 @@
     <style>
         body { font-family: sans-serif; background-color: #f0f2f5; margin: 0; padding: 0; }
         
-        /* Barra Superior Padronizada Sentry VV */
         .header { 
             background: #1a3a5f; 
             color: white; 
@@ -67,11 +66,11 @@
             -webkit-appearance: none;
         }
 
-        /* Gestão de Foto Widescreen */
+        /* Gestão de Foto - Removido aspect-ratio fixo do CSS */
         .foto-container { text-align: center; margin-bottom: 20px; background: #222; padding: 20px; border-radius: 8px; }
         .foto-label { display: inline-block; width: 100%; padding: 15px; background-color: #1a3a5f; color: white; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 14px; box-sizing: border-box; }
-        #preview-foto { width: 100%; max-width: 400px; height: auto; aspect-ratio: 16 / 9; object-fit: cover; border-radius: 8px; margin: 0 auto; display: block; border: 3px solid #fff; }
-        #wrapper-cropper { width: 100%; max-height: 400px; margin-top: 15px; display: none; overflow: hidden; background: #eee; border-radius: 8px; }
+        #preview-foto { width: 100%; max-width: 400px; height: auto; border-radius: 8px; margin: 0 auto; display: block; border: 3px solid #fff; }
+        #wrapper-cropper { width: 100%; max-height: 450px; margin-top: 15px; display: none; overflow: hidden; background: #eee; border-radius: 8px; }
         #image-to-crop { max-width: 100%; display: block; }
         .controles-foto { display: none; gap: 10px; justify-content: center; margin-top: 10px; }
         .btn-acao-foto { background: #6c757d; color: white; border: none; padding: 10px 15px; border-radius: 5px; font-weight: bold; cursor: pointer; }
@@ -182,21 +181,37 @@
                     previewFoto.style.display = 'none';
                     labelFoto.style.display = 'none';
                     if (cropper) cropper.destroy();
-                    cropper = new Cropper(imagemParaCorte, { aspectRatio: 1.777, viewMode: 1 });
+                    
+                    // CORREÇÃO: aspectRatio: NaN permite redimensionar o corte livremente
+                    cropper = new Cropper(imagemParaCorte, { 
+                        aspectRatio: NaN, 
+                        viewMode: 1,
+                        autoCropArea: 1,
+                        dragMode: 'move',
+                        responsive: true
+                    });
                 };
                 reader.readAsDataURL(input.files[0]);
             }
         }
 
         function confirmarCorte() {
-            const canvas = cropper.getCroppedCanvas({ width: 800, height: 450 });
-            const b64 = canvas.toDataURL('image/jpeg', 0.85);
-            document.getElementById('foto_editada').value = b64;
-            previewFoto.src = b64;
-            previewFoto.style.display = 'block';
-            wrapper.style.display = 'none';
-            controles.style.display = 'none';
-            labelFoto.style.display = 'inline-block';
+            if (cropper) {
+                // CORREÇÃO: Removido width/height fixos para não distorcer nem limitar o tamanho
+                const canvas = cropper.getCroppedCanvas({
+                    imageSmoothingEnabled: true,
+                    imageSmoothingQuality: 'high',
+                });
+                
+                const b64 = canvas.toDataURL('image/jpeg', 0.9);
+                document.getElementById('foto_editada').value = b64;
+                
+                previewFoto.src = b64;
+                previewFoto.style.display = 'block';
+                wrapper.style.display = 'none';
+                controles.style.display = 'none';
+                labelFoto.style.display = 'inline-block';
+            }
         }
 
         function processarVinculo(input) {

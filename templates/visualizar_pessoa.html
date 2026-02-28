@@ -34,21 +34,20 @@
         }
         .titulo-header { display: flex; align-items: center; padding-left: 15px; font-size: 16px; font-weight: bold; text-transform: uppercase; }
         
-        .container-ficha { padding: 10px; padding-bottom: 40px; }
+        .container-ficha { padding: 10px; padding-bottom: 80px; } /* Espaço para o botão flutuante */
         
         /* Card de Perfil Profissional */
         .card-perfil { background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
         
-        /* NOVO: Container para foto centralizada (estilo prontuário) */
         .foto-container-ficha {
-            background: #222; /* Fundo para destaque */
+            background: #222; 
             text-align: center;
             padding: 25px 0;
             border-bottom: 5px solid #1a3a5f;
         }
 
         .foto-alvo { 
-            width: 200px; /* Tamanho fixo para manter nitidez */
+            width: 200px; 
             height: 200px; 
             object-fit: cover; 
             border-radius: 10px; 
@@ -111,6 +110,27 @@
             font-weight: bold; 
             font-size: 16px;
         }
+
+        /* Botão Flutuante WhatsApp */
+        .btn-whatsapp {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background-color: #25d366;
+            color: white;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 30px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            text-decoration: none;
+            z-index: 2000;
+            border: none;
+            cursor: pointer;
+        }
     </style>
 </head>
 <body>
@@ -123,7 +143,7 @@
     <div class="container-ficha">
         <div class="card-perfil">
             <div class="foto-container-ficha">
-                <img src="{{ p.foto_path }}?v={{ ts }}" class="foto-alvo">
+                <img src="{{ p.foto_path }}?v={{ ts }}" class="foto-alvo" id="foto-alvo-img">
             </div>
 
             <div class="info-header">
@@ -131,7 +151,7 @@
                 <span class="vulgo-alvo">VULGO: {{ p.apelido if p.apelido else 'NÃO INFORMADO' }}</span>
                 
                 {% if p.embolamento %}
-                <div class="badge-grupo">FACÇÃO: {{ p.embolamento }}</div>
+                <div class="badge-grupo">FACÇÃO/GRUPO: {{ p.embolamento }}</div>
                 {% endif %}
             </div>
 
@@ -141,9 +161,10 @@
             </div>
 
             <div class="secao">
-                <span class="secao-titulo">Documentação</span>
+                <span class="secao-titulo">Dados Civis e Localização</span>
                 <p class="secao-conteudo"><strong>RG/CPF:</strong> {{ p.documento if p.documento else 'N/I' }}</p>
                 <p class="secao-conteudo" style="margin-top:5px;"><strong>Nascimento:</strong> {{ p.nascimento if p.nascimento else 'N/I' }}</p>
+                <p class="secao-conteudo" style="margin-top:5px;"><strong>Endereço:</strong> {{ p.endereco if p.endereco else 'NÃO INFORMADO' }}</p>
             </div>
 
             <div class="secao">
@@ -169,13 +190,20 @@
         <a href="/editar_pessoa/{{ p.id }}" class="btn-editar-link">📝 EDITAR DADOS OPERACIONAIS</a>
     </div>
 
+    <button class="btn-whatsapp" onclick="compartilharWhatsApp()" title="Compartilhar no WhatsApp">
+        <svg style="width:32px;height:32px" viewBox="0 0 24 24">
+            <path fill="currentColor" d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91C2.13 13.66 2.59 15.36 3.45 16.86L2.05 22L7.3 20.62C8.75 21.41 10.38 21.83 12.04 21.83C17.5 21.83 21.95 17.38 21.95 11.92C21.95 9.27 20.92 6.78 19.05 4.91C17.18 3.03 14.69 2 12.04 2M12.05 3.67C14.25 3.67 16.31 4.53 17.87 6.09C19.42 7.65 20.28 9.72 20.28 11.92C20.28 16.46 16.58 20.15 12.04 20.15C10.66 20.15 9.3 19.81 8.1 19.14L7.81 18.97L4.67 19.8L5.5 16.71L5.31 16.41C4.57 15.24 4.18 13.88 4.18 12.47C4.19 12.28 4.19 12.1 4.2 11.91C4.2 7.37 7.72 3.67 12.05 3.67M8.53 7.33C8.37 7.33 8.1 7.39 7.87 7.64C7.65 7.89 7 8.5 7 9.71C7 10.93 7.89 12.1 8 12.25C8.12 12.41 9.74 14.9 12.22 15.96C12.81 16.21 13.26 16.36 13.62 16.48C14.22 16.66 14.76 16.64 15.2 16.57C15.68 16.5 16.7 15.94 16.92 15.34C17.13 14.74 17.13 14.23 17.07 14.12C17 14 16.84 13.94 16.59 13.81C16.34 13.69 15.1 13.08 14.88 13C14.65 12.92 14.49 12.88 14.32 13.12C14.16 13.37 13.7 13.91 13.56 14.07C13.41 14.24 13.27 14.26 13.03 14.13C12.78 14 11.97 13.74 11.02 12.89C10.28 12.23 9.78 11.41 9.63 11.16C9.48 10.91 9.62 10.77 9.74 10.65C9.85 10.53 10 10.37 10.12 10.22C10.24 10.07 10.28 9.96 10.36 9.8C10.44 9.64 10.4 9.5 10.34 9.38C10.28 9.25 9.79 8.06 9.58 7.57C9.38 7.08 9.17 7.15 9.03 7.15C8.88 7.14 8.72 7.14 8.56 7.14" />
+        </svg>
+    </button>
+
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
+        // Configuração do Mapa
         var mapa = L.map('mapa_alvo', { 
             zoomControl: false, 
             scrollWheelZoom: false, 
-            dragging: false, 
-            touchZoom: false 
+            dragging: true, 
+            touchZoom: true 
         }).setView([{{ p.lat }}, {{ p.lng }}], 16);
 
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(mapa);
@@ -188,6 +216,31 @@
             opacity: 1,
             fillOpacity: 0.9
         }).addTo(mapa);
+
+        // Função de Compartilhamento WhatsApp
+        function compartilharWhatsApp() {
+            const nome = "{{ p.nome_completo }}".toUpperCase();
+            const vulgo = "{{ p.apelido if p.apelido else 'NÃO INFORMADO' }}".toUpperCase();
+            const faccao = "{{ p.embolamento if p.embolamento else 'N/I' }}".toUpperCase();
+            const doc = "{{ p.documento if p.documento else 'N/I' }}";
+            const mo = "{{ p.modus_operandi if p.modus_operandi else 'SEM REGISTRO' }}";
+            
+            // ROTA SEGURA: Utiliza o link curto i/<id> que mascará o caminho real do servidor
+            const linkSeguro = window.location.origin + "/i/{{ p.id }}";
+            
+            // Montagem da mensagem formatada: Link curto no topo garante o preview da foto
+            let mensagem = `${linkSeguro}\n\n`;
+            mensagem += `*🚨 SENTRY VV - FICHA DE INTELIGÊNCIA 🚨*\n\n`;
+            mensagem += `*NOME:* ${nome}\n`;
+            mensagem += `*VULGO:* ${vulgo}\n`;
+            mensagem += `*FACÇÃO:* ${faccao}\n`;
+            mensagem += `*DOCS:* ${doc}\n\n`;
+            mensagem += `*HISTÓRICO / M.O:* \n${mo}\n\n`;
+            mensagem += `_Link seguro gerado pelo sistema Sentry VV_`;
+
+            const urlFinal = "https://wa.me/?text=" + encodeURIComponent(mensagem);
+            window.open(urlFinal, '_blank');
+        }
     </script>
 </body>
 </html>

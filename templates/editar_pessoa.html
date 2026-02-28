@@ -14,7 +14,6 @@
         .container { background: white; padding: 20px; border-radius: 0 0 12px 12px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); margin: 10px; }
         label { display: block; margin-top: 15px; font-weight: bold; color: #1a3a5f; font-size: 14px; }
         
-        /* Estilos do Editor de Foto */
         .foto-container { text-align: center; margin-bottom: 20px; background: #222; padding: 20px; border-radius: 8px; }
         .foto-label { display: inline-block; width: 100%; padding: 15px; background-color: #1a3a5f; color: white; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 14px; box-sizing: border-box; margin-top: 10px; }
         #preview-foto { width: 180px; height: 180px; object-fit: cover; border-radius: 10px; margin: 0 auto; display: block; border: 3px solid #fff; box-shadow: 0 4px 10px rgba(0,0,0,0.5); }
@@ -27,12 +26,10 @@
         input, select, textarea { width: 100%; padding: 15px; margin: 5px 0 10px 0; border: 1px solid #ccc; border-radius: 8px; box-sizing: border-box; font-size: 16px; }
         #mapa_edicao { height: 280px; width: 100%; border-radius: 8px; margin: 10px 0; border: 2px solid #ccc; z-index: 1; }
         
-        /* Botões de Ação */
         .btn-salvar { width: 100%; background-color: #28a745; color: white; padding: 20px; border: none; border-radius: 8px; font-weight: bold; font-size: 18px; margin-top: 20px; cursor: pointer; }
         .btn-vinculos { width: 100%; background-color: #1a3a5f; color: white; padding: 15px; border: none; border-radius: 8px; font-weight: bold; font-size: 14px; margin-top: 10px; cursor: pointer; text-decoration: none; display: block; text-align: center; box-sizing: border-box; }
         .btn-excluir { width: 100%; background-color: #d9534f; color: white; padding: 15px; border: none; border-radius: 8px; font-weight: bold; font-size: 14px; margin-top: 15px; cursor: pointer; text-decoration: none; display: block; text-align: center; box-sizing: border-box; }
 
-        /* Estilos do Modal Profissional */
         .modal-foto { display: none; position: fixed; z-index: 2000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.8); align-items: center; justify-content: center; }
         .modal-conteudo { background: white; padding: 20px; border-radius: 12px; width: 90%; max-width: 400px; text-align: center; }
         .btn-modal { width: 100%; padding: 15px; margin: 10px 0; border: none; border-radius: 8px; font-weight: bold; font-size: 16px; cursor: pointer; }
@@ -40,7 +37,6 @@
         .btn-ajustar { background: #1a3a5f; color: white; }
         .btn-cancelar { background: #6c757d; color: white; }
 
-        /* Estilo Veículos */
         .card-veiculo { background: #f8f9fa; border: 1px solid #ddd; padding: 10px; border-radius: 8px; margin-top: 5px; display: flex; align-items: center; justify-content: space-between; }
         .placa-badge { background: #ffc107; color: black; padding: 2px 8px; border-radius: 4px; font-weight: bold; font-family: monospace; }
     </style>
@@ -82,16 +78,25 @@
             <input type="text" name="nome" value="{{ p.nome_completo }}" required>
 
             <label>Apelido / Vulgo</label>
-            <input type="text" name="apelido" value="{{ p.apelido if p.apelido }}">
+            <input type="text" name="apelido" value="{{ p.apelido if p.apelido else '' }}">
+
+            <label>RG (Identidade)</label>
+            <input type="text" name="documento_rg" placeholder="Apenas números">
+
+            <label>CPF</label>
+            <input type="text" name="documento_cpf" placeholder="000.000.000-00">
+
+            <label>Data de Nascimento</label>
+            <input type="date" name="nascimento" value="{{ p.nascimento if p.nascimento else '' }}">
+
+            <label>Endereço / Referência</label>
+            <input type="text" name="endereco" value="{{ p.endereco if p.endereco else '' }}">
 
             <label>Embolamento (Grupo / Facção)</label>
-            <input type="text" name="embolamento" value="{{ p.embolamento if p.embolamento }}">
+            <input type="text" name="embolamento" value="{{ p.embolamento if p.embolamento else '' }}">
 
             <label>Modus Operandi</label>
-            <textarea name="modus_operandi" rows="3">{{ p.modus_operandi if p.modus_operandi }}</textarea>
-
-            <label>Documento (RG/CPF)</label>
-            <input type="text" name="documento" value="{{ p.documento if p.documento }}">
+            <textarea name="modus_operandi" rows="3">{{ p.modus_operandi if p.modus_operandi else '' }}</textarea>
 
             <label>Veículos Vinculados</label>
             {% if p.veiculos %}

@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, session, url_for, send_from_directory
+from flask import Flask, render_template, request, redirect, session, url_for, send_from_directory, send_file
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
@@ -45,7 +45,7 @@ class Pessoa(db.Model):
     nome_completo = db.Column(db.String(100), nullable=False)
     apelido = db.Column(db.String(50))
     nascimento = db.Column(db.String(20))
-    documento = db.Column(db.String(20))
+    documento = db.Column(db.String(100)) 
     endereco = db.Column(db.String(200))
     lat = db.Column(db.Float, default=-29.7562)
     lng = db.Column(db.Float, default=-52.1458)
@@ -61,7 +61,7 @@ class Veiculo(db.Model):
     marca_modelo = db.Column(db.String(100))
     cor = db.Column(db.String(30))
     obs = db.Column(db.Text)
-    foto_path = db.Column(db.String(200), default="/static/car_default.png") # Nova Coluna
+    foto_path = db.Column(db.String(200), default="/static/car_default.png")
     pessoa_id = db.Column(db.Integer, db.ForeignKey('pessoa.id'), nullable=True)
 
 class Vinculo(db.Model):
@@ -78,23 +78,6 @@ with app.app_context():
         admin = Usuario(username='admin', password=generate_password_hash('admin123'), is_admin=True)
         db.session.add(admin)
         db.session.commit()
-
-# --- ROTA DE MIGRAÇÃO ATUALIZADA ---
-@app.route('/migrar')
-def migrar():
-    try:
-        with db.engine.connect() as conn:
-            # Tenta adicionar novas colunas se não existirem
-            try: conn.execute(text("ALTER TABLE pessoa ADD COLUMN modus_operandi TEXT"))
-            except: pass
-            try: conn.execute(text("ALTER TABLE pessoa ADD COLUMN embolamento VARCHAR(50)"))
-            except: pass
-            try: conn.execute(text("ALTER TABLE veiculo ADD COLUMN foto_path VARCHAR(200) DEFAULT '/static/car_default.png'"))
-            except: pass
-            conn.commit()
-        return "Migração tática concluída! Sistema de fotos para veículos ativado."
-    except Exception as e:
-        return f"Erro na migração: {str(e)}"
 
 # --- AUXILIARES ---
 
@@ -114,7 +97,6 @@ def processar_foto_base64(foto_data):
         print(f"Erro imagem pessoa: {e}")
         return None
 
-# NOVO: Processamento específico para Veículos (Widescreen 16:9)
 def processar_foto_veiculo_base64(foto_data):
     try:
         if not foto_data or ';base64,' not in foto_data: return None
@@ -124,8 +106,7 @@ def processar_foto_veiculo_base64(foto_data):
         filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
         img = Image.open(BytesIO(img_data))
         if img.mode in ("RGBA", "P"): img = img.convert("RGB")
-        # REDIMENSIONAMENTO FÍSICO 16:9 (800x450)
-        img = img.resize((800, 450), Image.LANCZOS)
+        img.thumbnail((1200, 1200), Image.LANCZOS)
         img.save(filepath, "JPEG", optimize=True, quality=85)
         return '/static/uploads/' + filename
     except Exception as e:
@@ -163,7 +144,6 @@ def visualizar_pessoa(id):
     p = Pessoa.query.get_or_404(id)
     return render_template('visualizar_pessoa.html', p=p, ts=int(time.time()))
 
-# NOVO: Rota para visualizar a ficha do veículo
 @app.route('/visualizar_veiculo/<int:id>')
 def visualizar_veiculo(id):
     if 'user_id' not in session: return redirect(url_for('login'))
@@ -182,6 +162,23 @@ def login():
             return redirect(url_for('index'))
     return render_template('login.html')
 
+# --- ROTA DE SEGURANÇA (MASCARAR FOTO) ---
+
+@app.route('/i/<int:id>')
+def link_foto_curto(id):
+    """Rota para camuflar o caminho real da foto no servidor"""
+    p = Pessoa.query.get_or_404(id)
+    # Pega o caminho relativo (/static/uploads/...) e converte em caminho absoluto no servidor
+    # p.foto_path geralmente começa com /static/... removendo a primeira barra para o os.path.join
+    caminho_relativo = p.foto_path.lstrip('/')
+    caminho_absoluto = os.path.join(base_dir, caminho_relativo)
+    
+    if os.path.exists(caminho_absoluto):
+        return send_file(caminho_absoluto)
+    else:
+        # Se não achar a foto, manda o logo padrão do sistema
+        return send_file(os.path.join(base_dir, 'static/logo.png'))
+
 # --- ROTAS DE PESSOA ---
 
 @app.route('/registrar')
@@ -192,7 +189,10 @@ def registrar():
 
 @app.route('/cadastrar', methods=['POST'])
 def cadastrar():
-    if 'user_id' not in session: return redirect(url_for('login'))
+    if 'user_id' not in session: 
+        return "Erro: Sessão expirada. Faça login no Sentry VV primeiro.", 403
+    
+    # Foto padrão se vier do script (sem imagem)
     foto_url = "/static/logo.png"
     foto_editada = request.form.get('foto_editada')
     if foto_editada:
@@ -202,18 +202,31 @@ def cadastrar():
         file = request.files['foto']
         if file.filename != '': foto_url = processar_foto(file)
     
+    # Captura documentos combinados (RG e CPF)
+    rg = request.form.get('documento_rg', '')
+    cpf = request.form.get('documento_cpf', '')
+    doc_formatado = f"RG: {rg} | CPF: {cpf}" if (rg or cpf) else "N/I"
+    
+    # Captura filiação e dados extras (CSI)
+    pai = request.form.get('pai', '')
+    mae = request.form.get('mae', '')
+    mo_extra = request.form.get('modus_operandi', '')
+    if pai or mae:
+        mo_extra = f"PAI: {pai} | MÃE: {mae} | {mo_extra}"
+
     nova = Pessoa(
-        nome_completo=request.form.get('nome'), 
-        apelido=request.form.get('apelido'), 
-        nascimento=request.form.get('nascimento'), 
-        documento=request.form.get('documento'),
-        endereco=request.form.get('endereco'), 
+        nome_completo=request.form.get('nome', 'NÃO INFORMADO').upper(), 
+        apelido=request.form.get('apelido', ''), 
+        nascimento=request.form.get('nascimento', ''), 
+        documento=doc_formatado,
+        endereco=request.form.get('endereco', ''), 
         lat=float(request.form.get('lat', -29.7562)),
         lng=float(request.form.get('lng', -52.1458)), 
         foto_path=foto_url,
-        modus_operandi=request.form.get('modus_operandi'),
-        embolamento=request.form.get('embolamento')
+        modus_operandi=mo_extra,
+        embolamento=request.form.get('embolamento', '')
     )
+    
     db.session.add(nova)
     db.session.commit()
     return redirect(url_for('index'))
@@ -222,19 +235,26 @@ def cadastrar():
 def editar_pessoa(id):
     if 'user_id' not in session: return redirect(url_for('login'))
     p = Pessoa.query.get_or_404(id)
-    return render_template('editar_pessoa.html', p=p)
+    return render_template('editar_pessoa.html', p=p, ts=int(time.time()))
 
 @app.route('/atualizar_pessoa/<int:id>', methods=['POST'])
 def atualizar_pessoa(id):
     if 'user_id' not in session: return redirect(url_for('login'))
     p = Pessoa.query.get_or_404(id)
+    
     p.nome_completo = request.form.get('nome')
     p.apelido = request.form.get('apelido')
-    p.documento = request.form.get('documento')
+    p.nascimento = request.form.get('nascimento')
+    p.endereco = request.form.get('endereco')
     p.embolamento = request.form.get('embolamento')
     p.modus_operandi = request.form.get('modus_operandi')
     p.lat = float(request.form.get('lat'))
     p.lng = float(request.form.get('lng'))
+    
+    rg = request.form.get('documento_rg', '')
+    cpf = request.form.get('documento_cpf', '')
+    if rg or cpf:
+        p.documento = f"RG: {rg} | CPF: {cpf}"
     
     foto_editada = request.form.get('foto_editada')
     if foto_editada:
@@ -303,7 +323,7 @@ def cadastrar_veiculo():
             marca_modelo=request.form.get('marca_modelo'),
             cor=request.form.get('cor'),
             obs=request.form.get('obs'),
-            foto_path=foto_url, # Grava Foto
+            foto_path=foto_url,
             pessoa_id=request.form.get('pessoa_id') or None
         )
         db.session.add(novo_v)
@@ -330,7 +350,6 @@ def atualizar_veiculo(id):
     v.obs = request.form.get('obs')
     v.pessoa_id = request.form.get('pessoa_id') or None
     
-    # Processa Foto do Veículo
     foto_editada = request.form.get('foto_editada')
     if foto_editada:
         nova_url = processar_foto_veiculo_base64(foto_editada)
