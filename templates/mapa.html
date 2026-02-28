@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Sentry VV - Mapa</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        body { margin: 0; padding: 0; font-family: sans-serif; overflow: hidden; }
+        
+        /* Barra Superior Padronizada Sentry VV */
+        .header { 
+            background: #1a3a5f; 
+            color: white; 
+            display: flex; 
+            align-items: stretch; 
+            height: 60px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            position: absolute;
+            top: 0;
+            width: 100%;
+            z-index: 1000;
+        }
+        .btn-voltar { 
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #d9534f; 
+            color: white; 
+            text-decoration: none; 
+            font-weight: bold; 
+            font-size: 24px; 
+            width: 80px; 
+            border-right: 1px solid rgba(255,255,255,0.2);
+        }
+        .titulo-header {
+            display: flex;
+            align-items: center;
+            padding-left: 15px;
+            font-size: 16px;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+
+        #map { height: 100vh; width: 100%; padding-top: 60px; box-sizing: border-box; z-index: 1; }
+        
+        /* Estilização do Popup */
+        .popup-content { text-align: center; min-width: 150px; }
+        .thumb-mapa { width: 80px; height: 80px; border-radius: 50%; border: 3px solid #1a3a5f; object-fit: cover; margin-bottom: 5px; }
+        .tag-mapa { background: #1a3a5f; color: white; padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: bold; display: inline-block; margin-top: 5px; }
+        .mo-mapa { font-size: 11px; color: #d9534f; font-weight: bold; margin-top: 5px; display: block; border-top: 1px solid #eee; padding-top: 5px; }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <a href="/" class="btn-voltar">⬅</a>
+    <div class="titulo-header">MAPA OPERACIONAL</div>
+</div>
+
+<div id="map"></div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+    var map = L.map('map', {
+        zoomControl: false 
+    }).setView([-29.7562, -52.1458], 14); 
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+
+    L.control.zoom({
+        position: 'bottomright'
+    }).addTo(map);
+
+    {% for p in pessoas %}
+    var marker = L.marker([{{ p.lat }}, {{ p.lng }}]).addTo(map);
+    marker.bindPopup(`
+        <div class="popup-content">
+            <img src="{{ p.foto_path }}" class="thumb-mapa"><br>
+            <strong style="text-transform: uppercase; font-size: 14px;">{{ p.nome_completo }}</strong><br>
+            <span style="color: #555; font-weight: bold;">Vulgo: {{ p.apelido if p.apelido else 'N/I' }}</span><br>
+            
+            {% if p.embolamento %}
+            <div class="tag-mapa">EMBOLAMENTO: {{ p.embolamento }}</div><br>
+            {% endif %}
+            
+            {% if p.modus_operandi %}
+            <span class="mo-mapa">M.O: {{ p.modus_operandi }}</span>
+            {% endif %}
+            
+            <a href="/editar_pessoa/{{ p.id }}" style="display: block; margin-top: 10px; font-size: 11px; font-weight: bold; color: #007bff; text-decoration: none;">VER FICHA / EDITAR</a>
+        </div>
+    `);
+    {% endfor %}
+</script>
+</body>
+</html>

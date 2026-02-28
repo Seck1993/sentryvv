@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+    <title>Sentry VV - Dados do Veículo</title>
+    <style>
+        body { font-family: sans-serif; background-color: #f0f2f5; margin: 0; padding: 0; }
+        
+        /* Barra Superior Sentry VV */
+        .header { 
+            background: #1a3a5f; 
+            color: white; 
+            display: flex; 
+            align-items: stretch; 
+            height: 60px; 
+            position: sticky; 
+            top: 0; 
+            z-index: 1000; 
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+        .btn-voltar { 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            background: #d9534f; 
+            color: white; 
+            text-decoration: none; 
+            font-weight: bold; 
+            font-size: 24px; 
+            width: 80px; 
+            border-right: 1px solid rgba(255,255,255,0.2); 
+        }
+        .titulo-header { display: flex; align-items: center; padding-left: 15px; font-size: 16px; font-weight: bold; text-transform: uppercase; }
+        
+        .container-veiculo { padding: 10px; padding-bottom: 40px; }
+        
+        /* Card de Veículo Profissional */
+        .card-veiculo-f { background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        
+        /* Container para foto Widescreen 16:9 */
+        .foto-container-veiculo {
+            background: #222;
+            text-align: center;
+            width: 100%;
+            line-height: 0;
+            border-bottom: 5px solid #ffc107; /* Amarelo para destacar que é veículo */
+        }
+
+        .foto-veiculo { 
+            width: 100%;
+            max-width: 800px;
+            height: auto;
+            aspect-ratio: 16 / 9;
+            object-fit: cover;
+            display: block;
+        }
+        
+        .info-header { padding: 20px; background: #fff; border-bottom: 1px solid #eee; }
+        
+        .placa-box {
+            display: inline-block;
+            background: #ffc107;
+            color: #000;
+            padding: 5px 15px;
+            border-radius: 6px;
+            font-family: monospace;
+            font-size: 28px;
+            font-weight: bold;
+            border: 2px solid #000;
+            margin-bottom: 10px;
+            box-shadow: 2px 2px 5px rgba(0,0,0,0.2);
+        }
+
+        .modelo-veiculo { font-size: 22px; font-weight: bold; color: #1a3a5f; margin: 0; text-transform: uppercase; }
+        .cor-veiculo { font-size: 16px; color: #666; font-weight: bold; margin-top: 5px; display: block; }
+        
+        /* Seções de Dados Operacionais */
+        .secao { padding: 20px; border-bottom: 1px solid #eee; }
+        .secao-titulo { font-size: 12px; font-weight: bold; color: #888; text-transform: uppercase; margin-bottom: 8px; display: block; }
+        .secao-conteudo { font-size: 16px; color: #333; line-height: 1.5; margin: 0; }
+
+        /* Card do Proprietário/Condutor Vinculado */
+        .card-proprietario { 
+            background: #f8f9fa; 
+            border: 1px solid #1a3a5f; 
+            padding: 15px; 
+            border-radius: 10px; 
+            margin-top: 10px; 
+            display: flex; 
+            align-items: center;
+            text-decoration: none;
+            color: inherit;
+        }
+        .foto-mini-p { width: 60px; height: 60px; border-radius: 50%; object-fit: cover; border: 2px solid #1a3a5f; margin-right: 15px; }
+
+        .btn-editar-veiculo { 
+            display: block; 
+            text-align: center; 
+            background: #1a3a5f; 
+            color: white; 
+            text-decoration: none; 
+            padding: 18px; 
+            border-radius: 8px; 
+            margin: 20px 10px; 
+            font-weight: bold; 
+            font-size: 16px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <a href="/" class="btn-voltar">⬅</a>
+        <div class="titulo-header">DETALHES DO VEÍCULO</div>
+    </div>
+
+    <div class="container-veiculo">
+        <div class="card-veiculo-f">
+            <div class="foto-container-veiculo">
+                <img src="{{ v.foto_path }}?v={{ ts }}" class="foto-veiculo">
+            </div>
+
+            <div class="info-header">
+                <div class="placa-box">{{ v.placa }}</div>
+                <h1 class="modelo-veiculo">{{ v.marca_modelo }}</h1>
+                <span class="cor-veiculo">COR: {{ v.cor if v.cor else 'NÃO INFORMADA' }}</span>
+            </div>
+
+            <div class="secao">
+                <span class="secao-titulo">Vínculo de Propriedade / Uso</span>
+                {% if v.condutor %}
+                <a href="/visualizar_pessoa/{{ v.condutor.id }}" class="card-proprietario">
+                    <img src="{{ v.condutor.foto_path }}" class="foto-mini-p">
+                    <div>
+                        <strong style="color: #1a3a5f;">{{ v.condutor.nome_completo }}</strong><br>
+                        <small style="color: #d9534f;">VULGO: {{ v.condutor.apelido if v.condutor.apelido else 'N/I' }}</small>
+                    </div>
+                </a>
+                {% else %}
+                <p class="secao-conteudo" style="color: #999;">Sem indivíduo formalmente vinculado.</p>
+                {% endif %}
+            </div>
+
+            <div class="secao">
+                <span class="secao-titulo">Observações Operacionais</span>
+                <p class="secao-conteudo">{{ v.obs if v.obs else 'Nenhuma observação registrada.' }}</p>
+            </div>
+
+            <div class="secao">
+                <span class="secao-titulo">Tipo</span>
+                <p class="secao-conteudo">{{ v.tipo }}</p>
+            </div>
+        </div>
+
+        <a href="/editar_veiculo/{{ v.id }}" class="btn-editar-veiculo">📝 EDITAR DADOS DO VEÍCULO</a>
+    </div>
+
+</body>
+</html>

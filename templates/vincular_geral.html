@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+    <title>Sentry VV - Gestão de Vínculos</title>
+    <style>
+        body { font-family: sans-serif; background-color: #f0f2f5; margin: 0; padding: 0; }
+        .header { background: #1a3a5f; color: white; display: flex; align-items: stretch; height: 60px; position: sticky; top: 0; z-index: 1000; }
+        .btn-voltar { display: flex; align-items: center; justify-content: center; background: #d9534f; color: white; text-decoration: none; font-weight: bold; font-size: 24px; width: 80px; border-right: 1px solid rgba(255,255,255,0.2); }
+        .titulo-header { display: flex; align-items: center; padding-left: 15px; font-size: 18px; font-weight: bold; }
+        .container { background: white; padding: 20px; border-radius: 12px; margin: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        label { display: block; margin-top: 15px; font-weight: bold; color: #1a3a5f; }
+        select, input { width: 100%; padding: 15px; margin: 5px 0; border: 1px solid #ccc; border-radius: 8px; font-size: 16px; box-sizing: border-box; }
+        .btn-vincular { width: 100%; background-color: #007bff; color: white; padding: 20px; border: none; border-radius: 8px; font-weight: bold; font-size: 18px; margin-top: 20px; cursor: pointer; }
+        
+        .secao-lista { margin-top: 30px; border-top: 2px solid #f0f2f5; padding-top: 20px; }
+        .card-vinculo { background: #f8f9fa; padding: 12px; border-radius: 8px; margin-bottom: 10px; border-left: 5px solid #1a3a5f; display: flex; justify-content: space-between; align-items: center; }
+        .info-vinc { font-size: 13px; color: #333; line-height: 1.4; }
+        .nome-vinc { font-weight: bold; color: #1a3a5f; text-transform: uppercase; }
+        .btn-del-vinc { background: #d9534f; color: white; text-decoration: none; padding: 8px 12px; border-radius: 5px; font-size: 11px; font-weight: bold; margin-left: 10px; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <a href="/" class="btn-voltar">⬅</a>
+        <div class="titulo-header">ESTABELECER CONEXÃO</div>
+    </div>
+    
+    <div class="container">
+        <form action="/salvar_vinculo" method="POST">
+            <label>Indivíduo A (Origem)</label>
+            <select name="origem" required>
+                <option value="">-- Selecione o Indivíduo --</option>
+                {% for p in pessoas %}
+                <option value="{{ p.id }}">{{ p.nome_completo }} {% if p.apelido %}({{ p.apelido }}){% endif %}</option>
+                {% endfor %}
+            </select>
+
+            <label>Tipo de Relação (Vínculo)</label>
+            <input type="text" name="relacao" placeholder="Ex: Fornecedor de, Olheiro de, Esposa de..." required>
+
+            <label>Indivíduo B (Destino)</label>
+            <select name="destino" required>
+                <option value="">-- Selecione o Indivíduo --</option>
+                {% for p in pessoas %}
+                <option value="{{ p.id }}">{{ p.nome_completo }} {% if p.apelido %}({{ p.apelido }}){% endif %}</option>
+                {% endfor %}
+            </select>
+
+            <button type="submit" class="btn-vincular">CRIAR VÍNCULO NA ÁRVORE</button>
+        </form>
+
+        <div class="secao-lista">
+            <h3 style="color: #1a3a5f; font-size: 16px; margin-bottom: 15px;">VÍNCULOS ATIVOS</h3>
+            {% for v in vinculos %}
+            <div class="card-vinculo">
+                <div class="info-vinc">
+                    <span class="nome-vinc">{{ v.origem.nome_completo }}</span><br>
+                    <span style="color: #d9534f; font-weight: bold;">➜ {{ v.tipo_vinculo }} ➜</span><br>
+                    <span class="nome-vinc">{{ v.destino.nome_completo }}</span>
+                </div>
+                <a href="javascript:void(0)" onclick="confirmarExcluirVinculo('{{ v.id }}')" class="btn-del-vinc">EXCLUIR</a>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <script>
+        function confirmarExcluirVinculo(id) {
+            if (confirm("Deseja realmente remover este vínculo da árvore de inteligência?")) {
+                window.location.href = "/excluir_vinculo/" + id;
+            }
+        }
+    </script>
+</body>
+</html>

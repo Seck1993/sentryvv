@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+    <title>Sentry VV - Ficha do Alvo</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        body { font-family: sans-serif; background-color: #f0f2f5; margin: 0; padding: 0; }
+        
+        /* Barra Superior Padronizada Sentry VV */
+        .header { 
+            background: #1a3a5f; 
+            color: white; 
+            display: flex; 
+            align-items: stretch; 
+            height: 60px; 
+            position: sticky; 
+            top: 0; 
+            z-index: 1000; 
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+        .btn-voltar { 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            background: #d9534f; 
+            color: white; 
+            text-decoration: none; 
+            font-weight: bold; 
+            font-size: 24px; 
+            width: 80px; 
+            border-right: 1px solid rgba(255,255,255,0.2); 
+        }
+        .titulo-header { display: flex; align-items: center; padding-left: 15px; font-size: 16px; font-weight: bold; text-transform: uppercase; }
+        
+        .container-ficha { padding: 10px; padding-bottom: 40px; }
+        
+        /* Card de Perfil Profissional */
+        .card-perfil { background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        
+        /* NOVO: Container para foto centralizada (estilo prontuário) */
+        .foto-container-ficha {
+            background: #222; /* Fundo para destaque */
+            text-align: center;
+            padding: 25px 0;
+            border-bottom: 5px solid #1a3a5f;
+        }
+
+        .foto-alvo { 
+            width: 200px; /* Tamanho fixo para manter nitidez */
+            height: 200px; 
+            object-fit: cover; 
+            border-radius: 10px; 
+            border: 3px solid #fff; 
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+            display: inline-block;
+        }
+        
+        .info-header { padding: 20px; background: #fff; border-bottom: 1px solid #eee; }
+        .nome-alvo { font-size: 22px; font-weight: bold; color: #1a3a5f; margin: 0; text-transform: uppercase; }
+        .vulgo-alvo { font-size: 18px; color: #d9534f; font-weight: bold; margin-top: 5px; display: block; }
+        
+        .badge-grupo { 
+            background: #1a3a5f; 
+            color: white; 
+            padding: 6px 15px; 
+            border-radius: 20px; 
+            font-size: 13px; 
+            font-weight: bold; 
+            display: inline-block; 
+            margin-top: 15px; 
+        }
+        
+        /* Seções de Dados Operacionais */
+        .secao { padding: 20px; border-bottom: 1px solid #eee; }
+        .secao-titulo { font-size: 12px; font-weight: bold; color: #888; text-transform: uppercase; margin-bottom: 8px; display: block; }
+        .secao-conteudo { font-size: 16px; color: #333; line-height: 1.5; margin: 0; }
+
+        .card-veiculo { 
+            background: #f8f9fa; 
+            border: 1px solid #ddd; 
+            padding: 12px; 
+            border-radius: 8px; 
+            margin-top: 8px; 
+            display: flex; 
+            align-items: center; 
+        }
+        .placa-badge { 
+            background: #ffc107; 
+            color: black; 
+            padding: 4px 10px; 
+            border-radius: 4px; 
+            font-weight: bold; 
+            font-family: monospace; 
+            margin-right: 15px; 
+            font-size: 16px;
+        }
+
+        #mapa_alvo { height: 250px; width: 100%; border-radius: 8px; margin-top: 10px; border: 1px solid #ccc; }
+        
+        .btn-editar-link { 
+            display: block; 
+            text-align: center; 
+            background: #007bff; 
+            color: white; 
+            text-decoration: none; 
+            padding: 18px; 
+            border-radius: 8px; 
+            margin: 20px 10px; 
+            font-weight: bold; 
+            font-size: 16px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <a href="/" class="btn-voltar">⬅</a>
+        <div class="titulo-header">FICHA INDIVIDUAL</div>
+    </div>
+
+    <div class="container-ficha">
+        <div class="card-perfil">
+            <div class="foto-container-ficha">
+                <img src="{{ p.foto_path }}?v={{ ts }}" class="foto-alvo">
+            </div>
+
+            <div class="info-header">
+                <h1 class="nome-alvo">{{ p.nome_completo }}</h1>
+                <span class="vulgo-alvo">VULGO: {{ p.apelido if p.apelido else 'NÃO INFORMADO' }}</span>
+                
+                {% if p.embolamento %}
+                <div class="badge-grupo">FACÇÃO: {{ p.embolamento }}</div>
+                {% endif %}
+            </div>
+
+            <div class="secao">
+                <span class="secao-titulo">Modus Operandi / Histórico Criminal</span>
+                <p class="secao-conteudo">{{ p.modus_operandi if p.modus_operandi else 'Nenhuma conduta registrada no sistema.' }}</p>
+            </div>
+
+            <div class="secao">
+                <span class="secao-titulo">Documentação</span>
+                <p class="secao-conteudo"><strong>RG/CPF:</strong> {{ p.documento if p.documento else 'N/I' }}</p>
+                <p class="secao-conteudo" style="margin-top:5px;"><strong>Nascimento:</strong> {{ p.nascimento if p.nascimento else 'N/I' }}</p>
+            </div>
+
+            <div class="secao">
+                <span class="secao-titulo">Veículos Vinculados</span>
+                {% if p.veiculos %}
+                    {% for v in p.veiculos %}
+                    <div class="card-veiculo">
+                        <div class="placa-badge">{{ v.placa }}</div>
+                        <div style="font-size: 14px;"><strong>{{ v.marca_modelo }}</strong><br><small>COR: {{ v.cor }}</small></div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <p class="secao-conteudo" style="color: #999;">Nenhum veículo vinculado a este indivíduo.</p>
+                {% endif %}
+            </div>
+
+            <div class="secao">
+                <span class="secao-titulo">Ponto de Referência Geográfico</span>
+                <div id="mapa_alvo"></div>
+            </div>
+        </div>
+
+        <a href="/editar_pessoa/{{ p.id }}" class="btn-editar-link">📝 EDITAR DADOS OPERACIONAIS</a>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        var mapa = L.map('mapa_alvo', { 
+            zoomControl: false, 
+            scrollWheelZoom: false, 
+            dragging: false, 
+            touchZoom: false 
+        }).setView([{{ p.lat }}, {{ p.lng }}], 16);
+
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(mapa);
+        
+        L.circleMarker([{{ p.lat }}, {{ p.lng }}], {
+            radius: 8,
+            fillColor: "#d9534f",
+            color: "#fff",
+            weight: 2,
+            opacity: 1,
+            fillOpacity: 0.9
+        }).addTo(mapa);
+    </script>
+</body>
+</html>

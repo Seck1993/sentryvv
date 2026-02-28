@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+    <title>Sentry VV - Gestão de Acessos</title>
+    <style>
+        body { font-family: sans-serif; background-color: #f0f2f5; margin: 0; padding: 0; }
+        
+        .header { 
+            background: #1a3a5f; 
+            color: white; 
+            display: flex; 
+            align-items: stretch; 
+            height: 60px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+        .btn-voltar { 
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #d9534f; 
+            color: white; 
+            text-decoration: none; 
+            font-weight: bold; 
+            font-size: 24px; 
+            width: 80px; 
+            border-right: 1px solid rgba(255,255,255,0.2);
+        }
+        .titulo-header {
+            display: flex;
+            align-items: center;
+            padding-left: 15px;
+            font-size: 16px;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+
+        .container { padding: 15px; }
+
+        .card-gerar { 
+            background: white; 
+            padding: 20px; 
+            border-radius: 12px; 
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        h3 { color: #1a3a5f; margin: 0 0 15px 0; font-size: 18px; border-bottom: 2px solid #f0f2f5; padding-bottom: 10px; }
+        
+        input { 
+            width: 100%; 
+            padding: 15px; 
+            margin: 10px 0; 
+            border: 2px solid #ccc; 
+            border-radius: 8px; 
+            box-sizing: border-box; 
+            font-size: 18px; 
+            text-align: center;
+        }
+        
+        .btn-gerar { 
+            width: 100%; 
+            background-color: #1a3a5f; 
+            color: white; 
+            padding: 18px; 
+            border: none; 
+            border-radius: 8px; 
+            font-weight: bold; 
+            font-size: 16px;
+            text-transform: uppercase;
+            cursor: pointer;
+        }
+
+        .secao-titulo { margin: 25px 0 10px 5px; font-weight: bold; color: #555; font-size: 14px; text-transform: uppercase; }
+
+        .tabela-gestao { 
+            width: 100%; 
+            border-collapse: collapse; 
+            background: white; 
+            border-radius: 10px; 
+            overflow: hidden;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        th { background: #e9ecef; color: #1a3a5f; padding: 12px; text-align: left; font-size: 13px; }
+        td { padding: 12px; border-top: 1px solid #eee; font-size: 15px; }
+        
+        .status-badge {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: bold;
+        }
+        .livre { background: #d4edda; color: #155724; }
+        .usado { background: #f8d7da; color: #721c24; }
+
+        .btn-del {
+            color: #d9534f;
+            text-decoration: none;
+            font-weight: bold;
+            font-size: 12px;
+            border: 1px solid #d9534f;
+            padding: 5px 8px;
+            border-radius: 4px;
+            float: right;
+        }
+        .btn-del:hover { background: #d9534f; color: white; }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <a href="/" class="btn-voltar">⬅</a>
+        <div class="titulo-header">CONTROLE DE ACESSOS</div>
+    </div>
+
+    <div class="container">
+        <div class="card-gerar">
+            <h3>Gerar Nova Sequência</h3>
+            <form method="POST">
+                <input type="text" name="novo_codigo" placeholder="Digite a Sequência" inputmode="numeric" pattern="[0-9]*" required>
+                <button type="submit" class="btn-gerar">CADASTRAR TOKEN</button>
+            </form>
+        </div>
+
+        <div class="secao-titulo">Sequências de Autorização</div>
+        <table class="tabela-gestao">
+            <thead>
+                <tr>
+                    <th>Sequência</th>
+                    <th>Status</th>
+                    <th>Ação</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for t in tokens %}
+                <tr>
+                    <td style="font-weight: bold; font-family: monospace; font-size: 16px;">{{ t.codigo }}</td>
+                    <td>
+                        {% if t.usado %}
+                            <span class="status-badge usado">USADO</span>
+                        {% else %}
+                            <span class="status-badge livre">DISPONÍVEL</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <a href="javascript:void(0)" onclick="confirmarExcluirToken('{{ t.id }}')" class="btn-del">APAGAR</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <div class="secao-titulo">Operadores Cadastrados</div>
+        <table class="tabela-gestao">
+            <thead>
+                <tr>
+                    <th>Usuário</th>
+                    <th>Tipo</th>
+                    <th>Ação</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for u in usuarios %}
+                <tr>
+                    <td style="font-weight: bold;">{{ u.username }}</td>
+                    <td style="font-size: 12px;">{{ 'ADMIN' if u.is_admin else 'POLICIAL' }}</td>
+                    <td>
+                        {% if u.username != 'admin' and u.username != session['username'] %}
+                        <a href="javascript:void(0)" onclick="confirmarExcluirUsuario('{{ u.id }}', '{{ u.username }}')" class="btn-del">REMOVER</a>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        function confirmarExcluirToken(id) {
+            if (confirm("Deseja cancelar esta sequência de autorização?")) {
+                window.location.href = "/excluir_token/" + id;
+            }
+        }
+
+        function confirmarExcluirUsuario(id, nome) {
+            if (confirm("ATENÇÃO: Deseja remover o acesso do usuário " + nome + "? Ele não poderá mais logar no sistema.")) {
+                window.location.href = "/excluir_usuario/" + id;
+            }
+        }
+    </script>
+
+</body>
+</html>

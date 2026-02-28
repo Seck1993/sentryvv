@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+    <title>Sentry VV - Novo Alvo</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css">
+    <style>
+        body { font-family: sans-serif; background-color: #f0f2f5; padding: 0; margin: 0; }
+        .header { background: #1a3a5f; color: white; display: flex; align-items: stretch; height: 60px; position: sticky; top: 0; z-index: 1000; }
+        .btn-voltar { display: flex; align-items: center; justify-content: center; background: #d9534f; color: white; text-decoration: none; font-weight: bold; font-size: 24px; width: 80px; border-right: 1px solid rgba(255,255,255,0.2); }
+        .titulo-header { display: flex; align-items: center; padding-left: 15px; font-size: 18px; font-weight: bold; }
+        .container { background: white; padding: 20px; border-radius: 0 0 12px 12px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); margin: 10px; }
+        label { display: block; margin-top: 15px; font-weight: bold; color: #1a3a5f; font-size: 14px; }
+        
+        /* Estilos do Editor de Foto */
+        .foto-container { text-align: center; margin-bottom: 20px; }
+        .foto-label { display: inline-block; width: 100%; padding: 20px; background-color: #1a3a5f; color: white; border-radius: 8px; cursor: pointer; font-weight: bold; }
+        #wrapper-cropper { width: 100%; max-height: 400px; margin-top: 15px; display: none; overflow: hidden; background: #eee; border-radius: 8px; }
+        #image-to-crop { max-width: 100%; display: block; }
+        .controles-foto { display: none; gap: 10px; justify-content: center; margin-top: 10px; }
+        .btn-acao-foto { background: #6c757d; color: white; border: none; padding: 10px 15px; border-radius: 5px; font-weight: bold; cursor: pointer; }
+        #preview-final { width: 120px; height: 120px; object-fit: cover; border-radius: 50%; margin: 15px auto; display: none; border: 3px solid #28a745; }
+
+        input, select, textarea { width: 100%; padding: 15px; margin: 5px 0 10px 0; border: 1px solid #ccc; border-radius: 8px; box-sizing: border-box; font-size: 16px; }
+        #mapa_selecao { height: 280px; width: 100%; border-radius: 8px; margin: 10px 0; border: 2px solid #ccc; }
+        .btn-salvar { width: 100%; background-color: #28a745; color: white; padding: 20px; border: none; border-radius: 8px; font-weight: bold; font-size: 18px; margin-top: 20px; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <a href="/" class="btn-voltar">⬅</a>
+        <div class="titulo-header">CADASTRAR INDIVÍDUO</div>
+    </div>
+    <div class="container">
+        <form action="/cadastrar" method="POST" id="form-cadastro">
+            <div class="foto-container">
+                <label for="foto-input" class="foto-label">📸 CAPTURAR OU ANEXAR FOTO</label>
+                <input type="file" id="foto-input" accept="image/*" style="display:none;">
+                
+                <div id="wrapper-cropper">
+                    <img id="image-to-crop">
+                </div>
+
+                <div class="controles-foto" id="controles">
+                    <button type="button" class="btn-acao-foto" onclick="cropper.rotate(-90)">↺ Girar</button>
+                    <button type="button" class="btn-acao-foto" onclick="cropper.rotate(90)">↻ Girar</button>
+                    <button type="button" class="btn-acao-foto" style="background:#28a745;" onclick="confirmarCorte()">✅ Cortar</button>
+                </div>
+
+                <img id="preview-final">
+                <input type="hidden" name="foto_editada" id="foto_editada">
+            </div>
+
+            <label>Nome Completo</label>
+            <input type="text" name="nome" required>
+
+            <label>Apelido / Vulgo</label>
+            <input type="text" name="apelido">
+
+            <label>Embolamento (Grupo / Facção)</label>
+            <input type="text" name="embolamento">
+
+            <label>Modus Operandi</label>
+            <textarea name="modus_operandi" rows="3"></textarea>
+
+            <label>Localização (Arraste o marcador)</label>
+            <div id="mapa_selecao"></div>
+            <div class="coords-group" style="display:flex; gap:10px;">
+                <div style="width: 50%;"><label>Lat</label><input type="text" name="lat" id="lat" value="-29.7562" readonly></div>
+                <div style="width: 50%;"><label>Lng</label><input type="text" name="lng" id="lng" value="-52.1458" readonly></div>
+            </div>
+
+            <button type="submit" class="btn-salvar">FINALIZAR E SALVAR</button>
+        </form>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
+    <script>
+        let cropper;
+        const inputFoto = document.getElementById('foto-input');
+        const imagemParaCorte = document.getElementById('image-to-crop');
+        const previewFinal = document.getElementById('preview-final');
+        const controles = document.getElementById('controles');
+        const wrapper = document.getElementById('wrapper-cropper');
+
+        inputFoto.onchange = function (e) {
+            const files = e.target.files;
+            if (files && files.length > 0) {
+                const reader = new FileReader();
+                reader.onload = function (event) {
+                    imagemParaCorte.src = event.target.result;
+                    wrapper.style.display = 'block';
+                    controles.style.display = 'flex';
+                    previewFinal.style.display = 'none';
+                    if (cropper) cropper.destroy();
+                    cropper = new Cropper(imagemParaCorte, {
+                        aspectRatio: 1,
+                        viewMode: 1,
+                        autoCropArea: 1
+                    });
+                };
+                reader.readAsDataURL(files[0]);
+            }
+        };
+
+        function confirmarCorte() {
+            if (cropper) {
+                const canvas = cropper.getCroppedCanvas({ width: 500, height: 500 });
+                const base64 = canvas.toDataURL('image/jpeg', 0.8);
+                document.getElementById('foto_editada').value = base64;
+                previewFinal.src = base64;
+                previewFinal.style.display = 'block';
+                wrapper.style.display = 'none';
+                controles.style.display = 'none';
+            }
+        }
+
+        // Mapa
+        var mapa = L.map('mapa_selecao', { zoomControl: false }).setView([-29.7562, -52.1458], 15);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(mapa);
+        var marc = L.marker([-29.7562, -52.1458], {draggable: true}).addTo(mapa);
+        mapa.on('click', e => { marc.setLatLng(e.latlng); atualizar(e.latlng.lat, e.latlng.lng); });
+        function atualizar(lat, lng) { document.getElementById('lat').value = lat.toFixed(6); document.getElementById('lng').value = lng.toFixed(6); }
+    </script>
+</body>
+</html>

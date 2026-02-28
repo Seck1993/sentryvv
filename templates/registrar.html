@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sentry VV - Novo Cadastro</title>
+    <style>
+        body { font-family: sans-serif; background-color: #f0f2f5; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        .card { background: white; padding: 25px; border-radius: 15px; width: 90%; max-width: 350px; text-align: center; }
+        input { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ccc; border-radius: 8px; box-sizing: border-box; }
+        button { width: 100%; background-color: #007bff; color: white; padding: 15px; border: none; border-radius: 8px; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h3>Nova Conta Operacional</h3>
+        <form method="POST">
+            <input type="text" name="token" placeholder="Sequência de Autorização" required>
+            <hr style="margin: 15px 0;">
+            <input type="text" name="username" placeholder="Escolha um Usuário" required>
+            <input type="password" name="password" placeholder="Defina sua Senha" required>
+            <button type="submit">CRIAR CONTA</button>
+        </form>
+        <a href="/login" style="display:block; margin-top:15px; font-size:13px; color:#666; text-decoration:none;">Já tenho conta</a>
+    </div>
+</body>
+</html>

@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Sentry VV - Inteligência</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+    <script type="text/javascript" src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
+    <style type="text/css">
+        body { margin: 0; padding: 0; font-family: sans-serif; background-color: #f8f9fa; overflow: hidden; }
+        
+        /* Barra Superior Padronizada Sentry VV */
+        .header { 
+            background: #1a3a5f; 
+            color: white; 
+            display: flex; 
+            flex-direction: column;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            position: absolute;
+            top: 0;
+            width: 100%;
+            z-index: 1000;
+        }
+
+        .nav-superior {
+            display: flex;
+            align-items: stretch;
+            height: 60px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .btn-voltar { 
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #d9534f; 
+            color: white; 
+            text-decoration: none; 
+            font-weight: bold; 
+            font-size: 24px; 
+            width: 80px; 
+            border-right: 1px solid rgba(255,255,255,0.2);
+        }
+
+        .titulo-header {
+            display: flex;
+            align-items: center;
+            padding-left: 15px;
+            font-size: 16px;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+
+        /* Área de Controles: Seleção + Busca */
+        .controles-analise {
+            background: #f1f3f5;
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            border-bottom: 2px solid #1a3a5f;
+        }
+
+        .linha-input {
+            display: flex;
+            gap: 10px;
+        }
+
+        /* Barra de Pesquisa que o senhor pediu para o Cabeça */
+        .input-pesquisa-cabeca {
+            width: 100%;
+            padding: 15px;
+            border-radius: 8px;
+            border: 2px solid #ccc;
+            font-size: 16px;
+            font-weight: bold;
+            color: #1a3a5f;
+            box-sizing: border-box;
+            outline: none;
+        }
+        .input-pesquisa-cabeca:focus { border-color: #1a3a5f; }
+
+        .input-busca-rede {
+            flex-grow: 1;
+            padding: 12px;
+            border-radius: 6px;
+            border: 1px solid #ccc;
+            font-size: 14px;
+            font-weight: bold;
+            color: #1a3a5f;
+            box-sizing: border-box;
+        }
+
+        #meu_grafo { 
+            width: 100%; 
+            height: 100vh; 
+            padding-top: 185px; /* Ajustado para comportar as barras sem cobrir o gráfico */
+            box-sizing: border-box; 
+            background: white;
+        }
+        
+        div.vis-tooltip {
+            background-color: #1a3a5f !important;
+            color: white !important;
+            border-radius: 8px !important;
+            padding: 10px !important;
+            font-size: 12px !important;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3) !important;
+        }
+
+        .instrucao {
+            position: absolute;
+            bottom: 20px;
+            width: 100%;
+            text-align: center;
+            color: #888;
+            font-size: 12px;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <div class="nav-superior">
+        <a href="/" class="btn-voltar">⬅</a>
+        <div class="titulo-header">INTELIGÊNCIA DE VÍNCULOS</div>
+    </div>
+    
+    <div class="controles-analise">
+        <div class="linha-input">
+            <input type="text" 
+                   id="buscaCabecaBanco" 
+                   class="input-pesquisa-cabeca" 
+                   list="listaPessoasBanco" 
+                   placeholder="🔍 PESQUISAR CABEÇA (NOME OU VULGO)..."
+                   oninput="detectarSelecaoCabeca(this)">
+            
+            <datalist id="listaPessoasBanco">
+                {% for p in pessoas_lista %}
+                <option data-id="{{ p.id }}" value="{{ p.nome_completo }} {% if p.apelido %}({{ p.apelido }}){% endif %}"></option>
+                {% endfor %}
+            </datalist>
+        </div>
+        
+        <div class="linha-input">
+            <input type="text" id="buscaRede" class="input-busca-rede" placeholder="🎯 Localizar conexão neste gráfico..." onkeyup="filtrarNaRede()">
+        </div>
+    </div>
+</div>
+
+<div id="meu_grafo"></div>
+<div class="instrucao">Toque duplo: Abrir Ficha | Arraste para organizar</div>
+
+<script type="text/javascript">
+    // Função para detectar quando o senhor seleciona o Cabeça na barra de pesquisa
+    function detectarSelecaoCabeca(input) {
+        var valor = input.value;
+        var opcoes = document.getElementById('listaPessoasBanco').childNodes;
+        for (var i = 0; i < opcoes.length; i++) {
+            if (opcoes[i].value === valor) {
+                var idAlvo = opcoes[i].getAttribute('data-id');
+                window.location.href = "/visualizar_arvore/" + idAlvo;
+                break;
+            }
+        }
+    }
+
+    // Inicialização dos Dados vindo do Python
+    var nodes = new vis.DataSet({{ nodes | tojson }});
+    var edges = new vis.DataSet({{ edges | tojson }});
+    
+    var container = document.getElementById('meu_grafo');
+    var data = { nodes: nodes, edges: edges };
+    
+    var options = {
+        nodes: { 
+            borderWidth: 4, 
+            size: 40, 
+            color: { 
+                border: '#1a3a5f', 
+                background: '#ffffff',
+                highlight: { border: '#d9534f', background: '#ffffff' }
+            }, 
+            font: { color: '#000000', size: 14, align: 'center', strokeWidth: 3, strokeColor: '#ffffff' } 
+        },
+        edges: { 
+            color: { color: '#666', opacity: 0.6 }, 
+            width: 2,
+            arrows: { to: { enabled: true, scaleFactor: 0.5 } }, 
+            font: { align: 'top', size: 11, color: '#d9534f', background: '#ffffff' },
+            smooth: { type: 'curvedCW', roundness: 0.2 }
+        },
+        physics: { 
+            enabled: true, 
+            solver: 'barnesHut',
+            barnesHut: {
+                gravitationalConstant: -4000,
+                centralGravity: 0.3,
+                springLength: 200,
+                springConstant: 0.04
+            },
+            stabilization: { iterations: 100 } 
+        }
+    };
+
+    var network = new vis.Network(container, data, options);
+
+    // FUNÇÃO DE BUSCA E FOCO NA REDE CARREGADA
+    function filtrarNaRede() {
+        var termo = document.getElementById('buscaRede').value.toLowerCase();
+        
+        if (termo === "") {
+            network.unselectAll();
+            return;
+        }
+
+        var alvoEncontrado = nodes.get({
+            filter: function (item) {
+                return item.label.toLowerCase().includes(termo);
+            }
+        });
+
+        if (alvoEncontrado.length > 0) {
+            var idAlvo = alvoEncontrado[0].id;
+            network.selectNodes([idAlvo]);
+            network.focus(idAlvo, {
+                scale: 1.2,
+                animation: { duration: 500, easingFunction: "easeInOutQuad" }
+            });
+        }
+    }
+
+    network.on("doubleClick", function (params) {
+        if (params.nodes.length > 0) {
+            var nodeId = params.nodes[0];
+            window.location.href = "/visualizar_pessoa/" + nodeId;
+        }
+    });
+</script>
+</body>
+</html>

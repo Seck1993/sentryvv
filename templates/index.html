@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+    <title>Sentry VV - Painel</title>
+    <style>
+        body { font-family: sans-serif; background-color: #f0f2f5; margin: 0; padding: 15px; }
+        .nav-top { display: flex; justify-content: space-between; align-items: center; background: #1a3a5f; color: white; padding: 12px; border-radius: 10px; margin-bottom: 15px; }
+        .nav-links a { color: #ffc107; text-decoration: none; margin-left: 12px; font-weight: bold; font-size: 13px; }
+        
+        /* Busca e Botão de Listagem */
+        .search-container { margin-bottom: 15px; }
+        .search-box { width: 100%; padding: 15px; border-radius: 8px; border: 2px solid #1a3a5f; font-size: 16px; box-sizing: border-box; }
+        .btn-ver-todos { background: #1a3a5f; color: #ffc107; padding: 10px; display: block; text-align: center; text-decoration: none; border-radius: 0 0 8px 8px; font-weight: bold; font-size: 12px; margin-top: -5px; border: 2px solid #1a3a5f; border-top: none; }
+
+        /* Chave de Seleção (Tab Switch) */
+        .tab-container { display: flex; background: #ddd; border-radius: 8px; margin-bottom: 15px; padding: 4px; }
+        .tab-btn { flex: 1; padding: 10px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; background: none; color: #555; transition: 0.3s; }
+        .tab-btn.active { background: #1a3a5f; color: white; }
+
+        .btn-acao { background: #28a745; color: white; padding: 15px; display: block; text-align: center; text-decoration: none; border-radius: 8px; font-weight: bold; margin-bottom: 10px; }
+        .btn-blue { background: #007bff; color: white; padding: 15px; display: block; text-align: center; text-decoration: none; border-radius: 8px; font-weight: bold; margin-bottom: 10px; }
+        .btn-grey { background: #6c757d; color: white; padding: 15px; display: block; text-align: center; text-decoration: none; border-radius: 8px; font-weight: bold; margin-bottom: 10px; }
+        
+        /* Cards e Ações */
+        .card { background: white; padding: 15px; border-radius: 10px; margin-bottom: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); display: flex; align-items: center; }
+        .info { flex-grow: 1; }
+        .nome { font-weight: bold; color: #1a3a5f; text-transform: uppercase; font-size: 14px; margin-bottom: 2px; }
+        .tag-veiculo { background: #ffc107; color: #000; padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: bold; margin-right: 5px; }
+        .tag-embolamento { background: #1a3a5f; color: white; padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: bold; display: inline-block; margin-top: 4px; }
+        .modus { font-size: 11px; color: #d9534f; font-weight: bold; margin-top: 4px; text-transform: uppercase; }
+        
+        .acoes-card { display: flex; gap: 5px; }
+        .btn-view-card { background: #1a3a5f; color: white; padding: 8px 12px; text-decoration: none; border-radius: 5px; font-size: 11px; font-weight: bold; }
+        .btn-edit-card { background: #f0f2f5; color: #1a3a5f; padding: 8px 12px; text-decoration: none; border-radius: 5px; font-size: 11px; font-weight: bold; border: 1px solid #ccc; }
+        
+        .hidden { display: none !important; }
+        .foto-mini { width: 60px; height: 60px; border-radius: 50%; margin-right: 12px; object-fit: cover; border: 2px solid #1a3a5f; }
+        #offline-indicator { display: none; background: #d9534f; color: white; text-align: center; padding: 5px; font-size: 12px; border-radius: 5px; margin-bottom: 10px; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div id="offline-indicator">SISTEMA OPERANDO OFFLINE (MODO BUFFER)</div>
+
+    <div class="nav-top">
+        <span>SGT {{ session['username'] }}</span>
+        <div class="nav-links">
+            {% if session['is_admin'] %}<a href="/admin/tokens">TOKENS</a>{% endif %}
+            <a href="/logout" style="color: #ff4d4d;">SAIR</a>
+        </div>
+    </div>
+
+    <div class="search-container">
+        <input type="text" id="inputBusca" class="search-box" placeholder="🔍 Nome, Embolamento, Crime ou Placa...">
+        <a href="/lista_geral" class="btn-ver-todos">📋 VER TODOS OS CADASTROS (LISTA ALFABÉTICA)</a>
+    </div>
+
+    <div class="tab-container">
+        <button class="tab-btn active" id="tabPessoas" onclick="switchTab('pessoa')">👤 INDIVÍDUOS</button>
+        <button class="tab-btn" id="tabVeiculos" onclick="switchTab('veiculo')">🚗 VEÍCULOS</button>
+    </div>
+
+    <div id="acoesPessoas">
+        <a href="/registrar" class="btn-acao">+ NOVO INDIVÍDUO</a>
+    </div>
+    <div id="acoesVeiculos" class="hidden">
+        <a href="/cadastrar_veiculo" class="btn-grey">+ VINCULAR VEÍCULO</a>
+    </div>
+
+    <a href="/mapa" class="btn-blue">📍 MAPA OPERACIONAL</a>
+    <a href="/visualizar_arvore" class="btn-blue">🌳 ÁRVORE DE VÍNCULOS</a>
+
+    <div id="listaGeral">
+        {% for p in pessoas %}
+        <div class="card item-busca type-pessoa">
+            <img src="{{ p.foto_path }}?v={{ ts }}" class="foto-mini">
+            <div class="info">
+                <div class="nome">{{ p.nome_completo }}</div>
+                <div style="font-size: 12px; color: #555;">VULGO: {{ p.apelido if p.apelido else 'N/I' }}</div>
+                
+                {% if p.embolamento %}
+                <div class="tag-embolamento">{{ p.embolamento }}</div>
+                {% endif %}
+                
+                {% if p.modus_operandi %}
+                <div class="modus">M.O: {{ p.modus_operandi }}</div>
+                {% endif %}
+            </div>
+            <div class="acoes-card">
+                <a href="/visualizar_pessoa/{{ p.id }}" class="btn-view-card">FICHA</a>
+                <a href="/editar_pessoa/{{ p.id }}" class="btn-edit-card">EDITAR</a>
+            </div>
+        </div>
+        {% endfor %}
+
+        {% for v in veiculos %}
+        <div class="card item-busca type-veiculo hidden" style="border-left: 6px solid #ffc107;">
+            <div class="info">
+                <div class="nome"><span class="tag-veiculo">PLACA</span> {{ v.placa }}</div>
+                <div style="font-size: 12px; color: #555;">{{ v.marca_modelo }} - {{ v.cor }}</div>
+            </div>
+            <div class="acoes-card">
+                <a href="/visualizar_veiculo/{{ v.id }}" class="btn-view-card">FICHA</a>
+                <a href="/editar_veiculo/{{ v.id }}" class="btn-edit-card">EDITAR</a>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <script>
+        if ('serviceWorker' in navigator) { navigator.serviceWorker.register('/static/sw.js'); }
+
+        function switchTab(type) {
+            document.getElementById('tabPessoas').classList.toggle('active', type === 'pessoa');
+            document.getElementById('tabVeiculos').classList.toggle('active', type === 'veiculo');
+            document.getElementById('acoesPessoas').classList.toggle('hidden', type !== 'pessoa');
+            document.getElementById('acoesVeiculos').classList.toggle('hidden', type !== 'veiculo');
+            filtrarResultados();
+        }
+
+        function filtrarResultados() {
+            let busca = document.getElementById('inputBusca').value.toLowerCase();
+            let abaAtiva = document.getElementById('tabPessoas').classList.contains('active') ? 'type-pessoa' : 'type-veiculo';
+
+            document.querySelectorAll('.item-busca').forEach(card => {
+                let texto = card.innerText.toLowerCase();
+                let pertenceAba = card.classList.contains(abaAtiva);
+                let bateBusca = texto.includes(busca);
+
+                if (pertenceAba && bateBusca) {
+                    card.classList.remove('hidden');
+                } else {
+                    card.classList.add('hidden');
+                }
+            });
+        }
+
+        document.getElementById('inputBusca').addEventListener('keyup', filtrarResultados);
+    </script>
+</body>
+</html>

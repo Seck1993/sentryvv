@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+    <link rel="manifest" href="/manifest.json">
+    <title>Sentry VV - Login</title>
+    <style>
+        body { font-family: sans-serif; background-color: #1a3a5f; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; overflow: hidden; }
+        .card { background: white; padding: 30px; border-radius: 15px; width: 90%; max-width: 350px; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.3); }
+        input { width: 100%; padding: 15px; margin: 10px 0; border: 2px solid #ccc; border-radius: 8px; font-size: 16px; box-sizing: border-box; -webkit-appearance: none; }
+        input:focus { border-color: #28a745; outline: none; }
+        button { width: 100%; background-color: #28a745; color: white; padding: 15px; border: none; border-radius: 8px; font-size: 18px; font-weight: bold; cursor: pointer; }
+        .link { display: block; margin-top: 20px; color: #1a3a5f; text-decoration: none; font-size: 14px; font-weight: bold; }
+        .error-msg { color: #d9534f; font-size: 13px; margin-bottom: 10px; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <img src="/static/logo.png" width="80" style="margin-bottom: 10px;" onerror="this.src='https://via.placeholder.com/80?text=Sentry'">
+        <h2 style="color:#1a3a5f; margin:0 0 20px 0;">SENTRY VV</h2>
+        
+        {% if error %}
+            <div class="error-msg">Usuário ou senha incorretos.</div>
+        {% endif %}
+
+        <form action="/login" method="POST">
+            <input type="text" name="username" placeholder="Usuário" required autofocus>
+            <input type="password" name="password" placeholder="Senha" required>
+            <button type="submit">ENTRAR NO SISTEMA</button>
+        </form>
+        
+        <a href="/novo_usuario" class="link">Criar Conta (Requer Sequência)</a>
+    </div>
+</body>
+</html>

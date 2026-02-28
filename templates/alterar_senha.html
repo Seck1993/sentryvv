@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sentry VV - Senha</title>
+    <style>
+        body { font-family: sans-serif; background-color: #1a3a5f; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        .card { background: white; padding: 30px; border-radius: 15px; width: 90%; max-width: 350px; text-align: center; }
+        input { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ccc; border-radius: 8px; box-sizing: border-box; }
+        button { width: 100%; background-color: #28a745; color: white; padding: 15px; border: none; border-radius: 8px; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h3>Alterar Senha</h3>
+        <form method="POST">
+            <input type="password" name="senha_atual" placeholder="Senha Atual" required>
+            <input type="password" name="nova_senha" placeholder="Nova Senha" required>
+            <button type="submit">SALVAR NOVA SENHA</button>
+        </form>
+        <br><a href="/" style="text-decoration: none; color: #666;">Cancelar</a>
+    </div>
+</body>
+</html>

@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+    <title>Sentry VV - Listagem Geral</title>
+    <style>
+        body { font-family: sans-serif; background-color: #f0f2f5; margin: 0; padding: 0; }
+        .header { background: #1a3a5f; color: white; display: flex; align-items: stretch; height: 60px; position: sticky; top: 0; z-index: 1000; }
+        .btn-voltar { display: flex; align-items: center; justify-content: center; background: #d9534f; color: white; text-decoration: none; font-weight: bold; font-size: 24px; width: 80px; border-right: 1px solid rgba(255,255,255,0.2); }
+        .titulo-header { display: flex; align-items: center; padding-left: 15px; font-size: 16px; font-weight: bold; }
+
+        .container-busca { padding: 15px; background: #fff; border-bottom: 2px solid #1a3a5f; }
+        .search-box { width: 100%; padding: 15px; border-radius: 8px; border: 2px solid #ccc; font-size: 16px; box-sizing: border-box; outline: none; }
+        .search-box:focus { border-color: #1a3a5f; }
+
+        /* Chave de Seleção (Tab Switch) */
+        .tab-container { display: flex; background: #eee; border-radius: 8px; margin: 10px 0; padding: 4px; }
+        .tab-btn { flex: 1; padding: 10px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; background: none; color: #555; transition: 0.3s; font-size: 12px; }
+        .tab-btn.active { background: #1a3a5f; color: white; }
+
+        .lista-container { padding: 10px; }
+        .card-alvo { 
+            background: white; padding: 12px; border-radius: 10px; margin-bottom: 10px; 
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05); display: flex; align-items: center; 
+            border-left: 5px solid #1a3a5f; 
+        }
+        
+        /* Estilo específico para cards de veículos na lista */
+        .card-veiculo { border-left: 5px solid #ffc107; }
+        .tag-placa { background: #ffc107; color: #000; padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: bold; margin-right: 5px; }
+
+        .foto-lista { width: 55px; height: 55px; border-radius: 50%; object-fit: cover; margin-right: 15px; border: 2px solid #eee; }
+        
+        .info { flex-grow: 1; }
+        .nome { font-weight: bold; color: #1a3a5f; text-transform: uppercase; font-size: 14px; }
+        .vulgo { color: #d9534f; font-weight: bold; font-size: 12px; margin-top: 2px; }
+        
+        .dados-identidade { font-size: 11px; color: #666; margin-top: 4px; line-height: 1.3; }
+        .tag-grupo { background: #e9ecef; color: #495057; padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: bold; display: inline-block; margin-top: 5px; }
+
+        .acoes { display: flex; flex-direction: column; gap: 5px; }
+        .btn-ficha { background: #1a3a5f; color: white; text-decoration: none; padding: 8px 12px; border-radius: 5px; font-size: 11px; font-weight: bold; text-align: center; }
+        .btn-edit { background: #f0f2f5; color: #1a3a5f; text-decoration: none; padding: 8px 12px; border-radius: 5px; font-size: 11px; font-weight: bold; text-align: center; border: 1px solid #ccc; }
+        
+        .hidden { display: none !important; }
+        .contador { padding: 5px 10px; font-size: 12px; color: #666; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <a href="/" class="btn-voltar">⬅</a>
+        <div class="titulo-header">BANCO DE DADOS GERAL</div>
+    </div>
+
+    <div class="container-busca">
+        <input type="text" id="inputLocal" class="search-box" placeholder="Filtrar nesta lista...">
+        
+        <div class="tab-container">
+            <button class="tab-btn active" id="tabPessoas" onclick="switchTab('pessoa')">👤 INDIVÍDUOS</button>
+            <button class="tab-btn" id="tabVeiculos" onclick="switchTab('veiculo')">🚗 VEÍCULOS</button>
+        </div>
+        
+        <div class="contador" id="resumo-contagem">Carregando registros...</div>
+    </div>
+
+    <div class="lista-container" id="listaGeral">
+        {% for p in pessoas %}
+        <div class="card-alvo item-lista type-pessoa">
+            <img src="{{ p.foto_path }}?v={{ ts }}" class="foto-lista">
+            <div class="info">
+                <div class="nome">{{ p.nome_completo }}</div>
+                <div class="vulgo">{{ p.apelido if p.apelido else 'VULGO NÃO INFORMADO' }}</div>
+                
+                <div class="dados-identidade">
+                    <strong>DOC:</strong> {{ p.documento if p.documento else 'N/I' }}<br>
+                    <strong>NASC:</strong> {{ p.nascimento if p.nascimento else 'N/I' }}
+                </div>
+
+                {% if p.embolamento %}
+                <div class="tag-grupo">{{ p.embolamento }}</div>
+                {% endif %}
+            </div>
+            <div class="acoes">
+                <a href="/visualizar_pessoa/{{ p.id }}" class="btn-ficha">FICHA</a>
+                <a href="/editar_pessoa/{{ p.id }}" class="btn-edit">EDITAR</a>
+            </div>
+        </div>
+        {% endfor %}
+
+        {% for v in veiculos %}
+        <div class="card-alvo item-lista type-veiculo card-veiculo hidden">
+            <div class="info">
+                <div class="nome"><span class="tag-placa">PLACA</span> {{ v.placa }}</div>
+                <div class="vulgo">{{ v.marca_modelo }}</div>
+                <div class="dados-identidade">
+                    <strong>COR:</strong> {{ v.cor if v.cor else 'N/I' }}<br>
+                    <strong>TIPO:</strong> {{ v.tipo if v.tipo else 'N/I' }}
+                </div>
+                {% if v.condutor %}
+                <div class="tag-grupo">VINCULADO: {{ v.condutor.nome_completo }}</div>
+                {% endif %}
+            </div>
+            <div class="acoes">
+                <a href="/editar_veiculo/{{ v.id }}" class="btn-edit">EDITAR</a>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <script>
+        function switchTab(type) {
+            document.getElementById('tabPessoas').classList.toggle('active', type === 'pessoa');
+            document.getElementById('tabVeiculos').classList.toggle('active', type === 'veiculo');
+            realizarFiltro();
+        }
+
+        function realizarFiltro() {
+            let busca = document.getElementById('inputLocal').value.toLowerCase();
+            let abaAtiva = document.getElementById('tabPessoas').classList.contains('active') ? 'type-pessoa' : 'type-veiculo';
+            let cards = document.querySelectorAll('.item-lista');
+            let encontrados = 0;
+
+            cards.forEach(card => {
+                let texto = card.innerText.toLowerCase();
+                let pertenceAba = card.classList.contains(abaAtiva);
+                let bateBusca = texto.includes(busca);
+
+                if(pertenceAba && bateBusca) {
+                    card.classList.remove('hidden');
+                    encontrados++;
+                } else {
+                    card.classList.add('hidden');
+                }
+            });
+
+            let tipoLabel = abaAtiva === 'type-pessoa' ? 'Indivíduos' : 'Veículos';
+            document.getElementById('resumo-contagem').innerText = `Mostrando ${encontrados} ${tipoLabel}`;
+        }
+
+        document.getElementById('inputLocal').addEventListener('keyup', realizarFiltro);
+        window.onload = realizarFiltro;
+    </script>
+</body>
+</html>
